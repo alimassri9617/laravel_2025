@@ -3,12 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Model;
 
-class Client extends Authenticatable
+class Client extends Model
 {
-    use HasFactory, Notifiable;
+    use HasFactory;
 
     protected $fillable = [
         'fname',
@@ -19,18 +18,9 @@ class Client extends Authenticatable
         'image'
     ];
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
+    // Relationships
     public function deliveries()
     {
         return $this->hasMany(Delivery::class);
-    }
-
-    public function reviews()
-    {
-        return $this->hasMany(Review::class);
     }
 }

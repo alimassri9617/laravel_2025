@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Client Dashboard</title>
+    <title>My Deliveries</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -22,15 +22,21 @@
 
     <div class="container py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Dashboard</h2>
+            <h2>My Deliveries</h2>
             <a href="{{ route('client.deliveries.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> New Delivery
             </a>
         </div>
 
-        <div class="card shadow-sm mb-4">
+        @if(session('success'))
+            <div class="alert alert-success">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        <div class="card shadow-sm">
             <div class="card-header bg-white">
-                <h5 class="mb-0">Recent Deliveries</h5>
+                <h5 class="mb-0">All Deliveries</h5>
             </div>
             <div class="card-body">
                 @if($deliveries->isEmpty())
@@ -43,6 +49,8 @@
                                     <th>ID</th>
                                     <th>Pickup</th>
                                     <th>Destination</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -53,6 +61,8 @@
                                     <td>#{{ $delivery->id }}</td>
                                     <td>{{ $delivery->pickup_location }}</td>
                                     <td>{{ $delivery->destination }}</td>
+                                    <td>{{ ucfirst($delivery->delivery_type) }}</td>
+                                    <td>${{ number_format($delivery->amount, 2) }}</td>
                                     <td>
                                         <span class="badge bg-{{ 
                                             $delivery->status == 'completed' ? 'success' : 

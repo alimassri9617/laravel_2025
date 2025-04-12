@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Reg;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DriverController;
+use App\Models\Client;
+
 Route::get('/', function () {
     return view('index');
 })->name('home');
@@ -27,29 +29,15 @@ Route::post('/login', [App\Http\Controllers\Login::class, 'login'])->name('login
 
 // Client routes
 Route::prefix('client')->name('client.')->group(function() {
-    // Authentication routes would go here
+    // Authentication
+    Route::get('/login', [ClientController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [ClientController::class, 'login']);
+    Route::get('/logout', [ClientController::class, 'logout'])->name('logout');
     
-    // Dashboard
+    // Protected routes
     Route::get('/dashboard', [ClientController::class, 'dashboard'])->name('dashboard');
-    
-    // Deliveries
     Route::get('/deliveries', [ClientController::class, 'deliveries'])->name('deliveries');
-    Route::get('/deliveries/{delivery}', [ClientController::class, 'showDelivery'])->name('deliveries.show');
-    
-    // New delivery
     Route::get('/deliveries/create', [ClientController::class, 'createDelivery'])->name('deliveries.create');
     Route::post('/deliveries', [ClientController::class, 'storeDelivery'])->name('deliveries.store');
-    
-    // Messages
-    Route::get('/messages', [ClientController::class, 'messages'])->name('messages');
-    Route::post('/deliveries/{delivery}/messages', [ClientController::class, 'sendMessage'])->name('messages.send');
-    
-    // Payments
-    Route::get('/payments', [ClientController::class, 'payments'])->name('payments');
-    
-    // Settings
-    Route::get('/settings', [ClientController::class, 'settings'])->name('settings');
-    Route::put('/settings', [ClientController::class, 'updateSettings'])->name('settings.update');
+    Route::get('/deliveries/{id}', [ClientController::class, 'showDelivery'])->name('deliveries.show');
 });
-
-Route::get("/driver",[DriverController::class,'dashboard'])->name("driver.dashboard");

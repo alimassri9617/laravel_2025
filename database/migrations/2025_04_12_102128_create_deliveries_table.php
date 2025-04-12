@@ -14,15 +14,14 @@ return new class extends Migration
         Schema::create('deliveries', function (Blueprint $table) {
             $table->id();
             $table->foreignId('client_id')->constrained()->onDelete('cascade');
-            $table->foreignId('driver_id')->nullable()->constrained()->onDelete('set null');
             $table->string('pickup_location');
             $table->string('destination');
-            $table->string('package_type')->default('small');
-            $table->string('delivery_type')->default('standard');
-            $table->dateTime('delivery_date');
+            $table->enum('package_type', ['small', 'medium', 'large', 'extra_large']);
+            $table->enum('delivery_type', ['standard', 'express', 'overnight']);
+            $table->date('delivery_date');
             $table->text('special_instructions')->nullable();
             $table->decimal('amount', 10, 2);
-            $table->string('status')->default('pending');
+            $table->enum('status', ['pending', 'accepted', 'in_progress', 'completed', 'cancelled'])->default('pending');
             $table->timestamps();
         });
     }
