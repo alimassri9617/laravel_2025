@@ -29,7 +29,6 @@ class Login extends Controller
             'email' => 'required|email',
             'password' => 'required|min:6|max:21',
         ]);
-
         // Try to find the user as a client
         $user = Client::where("email", $credentials["email"])->first();
 

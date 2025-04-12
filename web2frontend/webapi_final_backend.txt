@@ -1,0 +1,480 @@
+# Menu WebAPI with Swagger, SQL Server, and Authentication
+
+Here's a comprehensive solution for a Menu WebAPI with all the requested features:
+
+## 1. Project Setup
+
+First, create a new ASP.NET Core Web API project:
+
+```bash
+dotnet new webapi -n MenuAPI
+cd MenuAPI
+```
+
+## 2. Required Packages
+
+Install these NuGet packages:
+
+```bash
+dotnet add package Microsoft.EntityFrameworkCore
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer
+dotnet add package Microsoft.EntityFrameworkCore.Design
+dotnet add package Microsoft.AspNetCore.Authentication.JwtBearer
+dotnet add package Swashbuckle.AspNetCore
+dotnet add package Swashbuckle.AspNetCore.Newtonsoft
+```
+
+## 3. Database Models and Context
+
+Create a `Models` folder and add these classes:
+
+### Models/MenuItem.cs
+```csharp
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace MenuAPI.Models
+{
+    public class MenuItem
+    {
+        [Key]
+        public int Id { get; set; }
+
+        [Required]
+        public string Name { get; set; }
+
+        public string Description { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Price { get; set; }
+
+        public string Category { get; set; }
+
+        // For storing image as byte array
+        public byte[]? Image { get; set; }
+
+        // Or for storing image path
+        public string? ImagePath { get; set; }
+    }
+}
+```
+
+### Models/User.cs
+```csharp
+using System.ComponentModel.DataAnnotations;
+
+namespace MenuAPI.Models
+{
+    public class User
+    {
+        [Key]
+        public int Id { get; set; }
+
+        [Required]
+        public string Username { get; set; }
+
+        [Required]
+        public string Password { get; set; }
+
+        public string Role { get; set; } = "User";
+    }
+}
+```
+
+### Data/AppDbContext.cs
+```csharp
+using Microsoft.EntityFrameworkCore;
+using MenuAPI.Models;
+
+namespace MenuAPI.Data
+{
+    public class AppDbContext : DbContext
+    {
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+        {
+        }
+
+        public DbSet<MenuItem> MenuItems { get; set; }
+        public DbSet<User> Users { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            // Seed initial data
+            modelBuilder.Entity<MenuItem>().HasData(
+                new MenuItem { Id = 1, Name = "Cheeseburger", Description = "Classic cheeseburger with lettuce and tomato", Price = 8.99m, Category = "Main" },
+                new MenuItem { Id = 2, Name = "Caesar Salad", Description = "Fresh romaine lettuce with Caesar dressing", Price = 7.50m, Category = "Starter" }
+            );
+
+            modelBuilder.Entity<User>().HasData(
+                new User { Id = 1, Username = "admin", Password = "admin123", Role = "Admin" },
+                new User { Id = 2, Username = "user", Password = "user123", Role = "User" }
+            );
+        }
+    }
+}
+```
+
+## 4. Configuration and Startup
+
+### appsettings.json
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=MenuDB;Trusted_Connection=True;MultipleActiveResultSets=true"
+  },
+  "Jwt": {
+    "Key": "ThisIsMySecretKeyForJWTTokenGeneration",
+    "Issuer": "MenuAPI",
+    "Audience": "MenuAPIUsers"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}
+```
+
+### Program.cs
+```csharp
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using MenuAPI.Data;
+using System.Text;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Add authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+    });
+
+builder.Services.AddControllers()
+    .AddNewtonsoftJson()
+    .AddXmlDataContractSerializerFormatters();
+
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Menu API", Version = "v1" });
+    
+    // Add JWT Authentication to Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header,
+            },
+            new List<string>()
+        }
+    });
+});
+
+var app = builder.Build();
+
+// Automatic database migration
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<AppDbContext>();
+    context.Database.Migrate();
+}
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();
+```
+
+## 5. Controllers
+
+### Controllers/AuthController.cs
+```csharp
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using MenuAPI.Data;
+using MenuAPI.Models;
+
+namespace MenuAPI.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class AuthController : ControllerBase
+    {
+        private readonly AppDbContext _context;
+        private readonly IConfiguration _configuration;
+
+        public AuthController(AppDbContext context, IConfiguration configuration)
+        {
+            _context = context;
+            _configuration = configuration;
+        }
+
+        [HttpPost("login")]
+        public IActionResult Login([FromBody] User login)
+        {
+            var user = _context.Users.FirstOrDefault(u => u.Username == login.Username && u.Password == login.Password);
+            
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var token = GenerateJwtToken(user);
+            return Ok(new { token });
+        }
+
+        private string GenerateJwtToken(User user)
+        {
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Username),
+                new Claim(ClaimTypes.Role, user.Role)
+            };
+
+            var token = new JwtSecurityToken(
+                _configuration["Jwt:Issuer"],
+                _configuration["Jwt:Audience"],
+                claims,
+                expires: DateTime.Now.AddMinutes(30),
+                signingCredentials: credentials);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+    }
+}
+```
+
+### Controllers/MenuController.cs
+```csharp
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MenuAPI.Data;
+using MenuAPI.Models;
+
+namespace MenuAPI.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    [Authorize]
+    public class MenuController : ControllerBase
+    {
+        private readonly AppDbContext _context;
+
+        public MenuController(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        // GET: api/Menu
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<MenuItem>>> GetMenuItems()
+        {
+            return await _context.MenuItems.ToListAsync();
+        }
+
+        // GET: api/Menu/5
+        [HttpGet("{id}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<MenuItem>> GetMenuItem(int id)
+        {
+            var menuItem = await _context.MenuItems.FindAsync(id);
+
+            if (menuItem == null)
+            {
+                return NotFound();
+            }
+
+            return menuItem;
+        }
+
+        // GET: api/Menu/Category/Main
+        [HttpGet("Category/{category}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<MenuItem>>> GetMenuItemsByCategory(string category)
+        {
+            // Using LINQ to filter by category
+            var items = await _context.MenuItems
+                .Where(m => m.Category == category)
+                .ToListAsync();
+
+            if (!items.Any())
+            {
+                return NotFound();
+            }
+
+            return items;
+        }
+
+        // POST: api/Menu
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<MenuItem>> PostMenuItem(MenuItem menuItem)
+        {
+            _context.MenuItems.Add(menuItem);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("GetMenuItem", new { id = menuItem.Id }, menuItem);
+        }
+
+        // PUT: api/Menu/5
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> PutMenuItem(int id, MenuItem menuItem)
+        {
+            if (id != menuItem.Id)
+            {
+                return BadRequest();
+            }
+
+            _context.Entry(menuItem).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!MenuItemExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        // DELETE: api/Menu/5
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteMenuItem(int id)
+        {
+            var menuItem = await _context.MenuItems.FindAsync(id);
+            if (menuItem == null)
+            {
+                return NotFound();
+            }
+
+            _context.MenuItems.Remove(menuItem);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private bool MenuItemExists(int id)
+        {
+            return _context.MenuItems.Any(e => e.Id == id);
+        }
+    }
+}
+```
+
+## 6. Running and Testing the API
+
+1. Run the application:
+```bash
+dotnet run
+```
+
+2. The API will be available at `https://localhost:5001` (or similar port)
+
+3. Swagger UI will be available at `https://localhost:5001/swagger`
+
+## 7. Features Implemented
+
+- **SQL Server Integration**: Using Entity Framework Core with SQL Server
+- **Automatic Database Migration**: The database is created and migrated automatically on startup
+- **Authentication & Authorization**: JWT-based authentication with role-based authorization
+- **Swagger Documentation**: Complete API documentation with Swagger UI
+- **JSON and XML Support**: API supports both JSON and XML responses
+- **LINQ Queries**: Used for filtering menu items by category
+- **Image Support**: Menu items can include images (stored as byte arrays or paths)
+
+## 8. Testing the API
+
+1. First, get a JWT token by calling the login endpoint:
+   ```
+   POST /api/Auth/login
+   Body: {"username": "admin", "password": "admin123"}
+   ```
+
+2. Use the returned token in the Authorization header for protected endpoints:
+   ```
+   Authorization: Bearer <your_token>
+   ```
+
+3. Try different endpoints:
+   - GET /api/Menu (public)
+   - POST /api/Menu (admin only)
+   - GET /api/Menu/Category/{category} (public)
+
+## 9. Deployment Notes
+
+For production:
+1. Change the JWT key to a more secure value
+2. Use environment variables for sensitive configuration
+3. Implement proper user registration and password hashing
+4. Consider using Azure Blob Storage or similar for image storage instead of database
+
+This implementation provides a complete foundation for a Menu WebAPI with all the requested features.

@@ -18,6 +18,47 @@ return [
         'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
     ],
 
+    'guards' => [
+    'web' => [
+        'driver' => 'session',
+        'provider' => 'users',
+    ],
+
+    'client' => [
+        'driver' => 'session',
+        'provider' => 'clients',
+    ],
+
+    'driver' => [
+        'driver' => 'session',
+        'provider' => 'drivers',
+    ],
+
+    'admin' => [
+        'driver' => 'session',
+        'provider' => 'admins',
+    ],
+],
+
+'providers' => [
+    
+
+    'clients' => [
+        'driver' => 'eloquent',
+        'model' => App\Models\Client::class,
+    ],
+
+    'drivers' => [
+        'driver' => 'eloquent',
+        'model' => App\Models\Driver::class,
+    ],
+
+    'admins' => [
+        'driver' => 'eloquent',
+        'model' => App\Models\Admin::class,
+    ],
+],
+
     /*
     |--------------------------------------------------------------------------
     | Authentication Guards
@@ -60,10 +101,7 @@ return [
     */
 
     'providers' => [
-        'users' => [
-            'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\User::class),
-        ],
+        
 
         // 'users' => [
         //     'driver' => 'database',

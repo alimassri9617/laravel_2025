@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Reg;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\DriverController;
 Route::get('/', function () {
     return view('index');
 })->name('home');
@@ -51,3 +52,4 @@ Route::prefix('client')->name('client.')->group(function() {
     Route::put('/settings', [ClientController::class, 'updateSettings'])->name('settings.update');
 });
 
+Route::get("/driver",[DriverController::class,'dashboard'])->name("driver.dashboard");
