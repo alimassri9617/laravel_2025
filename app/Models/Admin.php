@@ -6,31 +6,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class Client extends Authenticatable
+class Admin extends Authenticatable
 {
     use HasFactory, Notifiable;
 
     protected $fillable = [
-        'fname',
-        'lname',
+        'name',
         'email',
-        'phone',
-        'password',
-        'image'
+        'password'
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
     ];
-
-    public function deliveries()
-    {
-        return $this->hasMany(Delivery::class);
-    }
-
-    public function reviews()
-    {
-        return $this->hasMany(Review::class);
-    }
 }

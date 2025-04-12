@@ -23,7 +23,9 @@ return new class extends Migration
             $table->string("driverlicense");
             $table->string("pricemodel");
             $table->string("work_area")->default("baalbek");
-            $table->string("image");
+            $table->string("image")->nullable();
+            $table->boolean('approved')->default(false);
+            $table->rememberToken();
             $table->timestamps();
         });
     }

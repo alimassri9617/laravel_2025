@@ -2,19 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 
 use App\Models\Client;
 use App\Models\Driver;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+
 class Login extends Controller
 {
-    
-          public function logout(Request $request)
+    public function logout(Request $request)
     {
-        // Perform logout logic here
-        // For example, you can use Auth::logout() if you're using Laravel's authentication system
+        // If you're using Auth system, you can log out like this:
+        Auth::logout();
+
+        // Or clear custom session if you're using manual auth
+        $request->session()->flush();
+
         return redirect()->route('home')->with('success', 'Logout successful');
     }
 
@@ -23,16 +27,20 @@ class Login extends Controller
         // Validate request data
         $credentials = $request->validate([
             'email' => 'required|email',
-            'password' => 'required|min:6|max:20',
+            'password' => 'required|min:6|max:21',
         ]);
-        if(Client::where("email",$credentials["email"])->exists()){
-            $user = Client::where("email",$credentials["email"])->first();
-            if (Hash::check($credentials['password'], $user->password)) {
-                // Authentication passed
-                return redirect()->route('home')->with('success', 'Login successful');
-            } else {
-                return redirect()->back()->with('error', 'Invalid credentials');
-            }
-       
-        }}
+
+        // Try to find the user as a client
+        $user = Client::where("email", $credentials["email"])->first();
+
+        if ($user && Hash::check($credentials['password'], $user->password)) {
+            // Login successful
+            // You can set session data if you're not using Auth
+            // $request->session()->put('user', $user);
+
+            return redirect()->route('home')->with('success', 'Login successful');
+        } else {
+            return redirect()->back()->with('error', 'Invalid credentials');
+        }
     }
+}
