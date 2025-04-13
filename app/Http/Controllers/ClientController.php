@@ -14,6 +14,7 @@ class ClientController extends Controller
     {
         return view('client.login');
     }
+    
 
     // Handle login
     public function login(Request $request)

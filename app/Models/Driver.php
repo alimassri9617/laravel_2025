@@ -3,12 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Model;
 
-class Driver extends Authenticatable
+class Driver extends Model
 {
-    use HasFactory, Notifiable;
+    use HasFactory;
 
     protected $fillable = [
         'fname',
@@ -16,27 +15,24 @@ class Driver extends Authenticatable
         'email',
         'phone',
         'password',
-        'vicheltype',
-        'platenumber',
-        'driverlicense',
-        'pricemodel',
+        'vehicle_type',
+        'plate_number',
+        'driver_license',
+        'price_model',
         'work_area',
         'image',
-        
+        'approved'
     ];
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $hidden = ['password'];
+
+    public function setPasswordAttribute($value)
+    {
+        $this->attributes['password'] = bcrypt($value);
+    }
 
     public function deliveries()
     {
         return $this->hasMany(Delivery::class);
-    }
-
-    public function reviews()
-    {
-        return $this->hasMany(Review::class);
     }
 }

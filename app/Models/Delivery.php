@@ -14,6 +14,7 @@ class Delivery extends Model
         'pickup_location',
         'destination',
         'package_type',
+        'driver_id',
         'delivery_type',
         'delivery_date',
         'special_instructions',
@@ -26,4 +27,8 @@ class Delivery extends Model
     {
         return $this->belongsTo(Client::class);
     }
+    public function driver()
+{
+    return $this->belongsTo(Driver::class);
+}
 }

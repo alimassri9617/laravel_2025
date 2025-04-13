@@ -18,10 +18,10 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('phone')->unique();
             $table->string('password');
-            $table->string("vicheltype");
-            $table->string("platenumber");
-            $table->string("driverlicense");
-            $table->string("pricemodel");
+            $table->string("vehicle_type");
+            $table->string("plate_number");
+            $table->string("driver_license");
+            $table->string("price_model");
             $table->string("work_area")->default("baalbek");
             $table->string("image")->nullable();
             $table->boolean('approved')->default(false);
