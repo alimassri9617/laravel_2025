@@ -22,6 +22,12 @@ return new class extends Migration
             $table->text('special_instructions')->nullable();
             $table->decimal('amount', 10, 2);
             $table->enum('status', ['pending', 'accepted', 'in_progress', 'completed', 'cancelled'])->default('pending');
+            $table->foreignId('driver_id')
+            ->nullable()
+            ->constrained('drivers')
+            ->onDelete('cascade');
+            
+
             $table->timestamps();
         });
     }

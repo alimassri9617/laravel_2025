@@ -21,6 +21,7 @@ class Driver extends Model
         'price_model',
         'work_area',
         'image',
+        
         'approved'
     ];
 

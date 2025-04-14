@@ -19,6 +19,7 @@ class Delivery extends Model
         'delivery_date',
         'special_instructions',
         'amount',
+        'driver_id',
         'status'
     ];
 

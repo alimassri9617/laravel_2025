@@ -7,12 +7,12 @@
 </head>
 <body class="d-flex">
     <!-- Sidebar (same as dashboard) -->
-    @include('driver.partials.sidebar')
+   
 
     <!-- Main Content -->
     <div class="main-content bg-light">
         <!-- Top Navigation (same as dashboard) -->
-        @include('driver.partials.topnav')
+      
 
         <!-- Earnings Content -->
         <div class="container-fluid p-4">
